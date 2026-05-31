@@ -90,41 +90,45 @@ const DEFAULT_WORKSHEET_QUESTIONS: WorksheetQuestion[] = [
 /**
  * Canned "AI" follow-ups per worksheet question.
  *
- * These do NOT ask the student to restate what they already said in
- * their brain-dump. They push them to:
- *   - find specific evidence from the text,
- *   - probe WHY something matters (not just what happened),
- *   - find the strongest articulation of an idea,
- *   - structure their answer into parts.
+ * Design rule (the central thesis): every textual detail or quote
+ * that ends up in the polished draft must FIRST appear in the
+ * student's own answer to a follow-up. The AI never silently
+ * imports evidence from the source passage. The first follow-up for
+ * every question is therefore an EVIDENCE-RETRIEVAL prompt — the
+ * student looks at the passage and pulls out the specific detail
+ * themselves. The remaining follow-ups push for reasoning, contrast,
+ * or a sharper articulation.
  *
- * Each prompt assumes the student has already told us their position;
- * the follow-up's job is to make them think one layer deeper.
+ * If a student skips a follow-up, the corresponding contribution to
+ * the polished draft is omitted too (see POLISH_PLANS below) — so
+ * "Skipped" in the provenance trail and "missing in polished" stay
+ * in sync.
  */
 const FOLLOWUPS_BY_QUESTION: Record<string, string[]> = {
   // w1 — how Mira's attitude toward the lighthouse changes
   w1: [
-    "What's one line from the passage you'd point to as the strongest evidence of that change?",
-    "Why do you think the grandma's story was enough to shift her view — what about it landed?",
-    "If you had to put your answer in two parts, before and after, where exactly is the turning point?",
+    "What's one specific detail from the passage that shows that change?",
+    "Why do you think the grandma's story was enough to shift Mira's view — what about it landed?",
+    "Where exactly is the turning point — before and after what moment?",
     "Is there a single word that captures the shift better than 'scared' or 'liked'?",
   ],
   // w2 — the grandmother's role
   w2: [
-    "What changed for Mira — the lighthouse itself, or something about how she sees it? Why does that distinction matter?",
+    "What's the specific story or detail from the passage that the grandmother shares with Mira?",
+    "What actually changed — the lighthouse itself, or how Mira sees it? Why does that distinction matter?",
     "Why might a family story have that effect when other things wouldn't?",
-    "Find the moment in the passage where you can feel the shift happen — what's the exact line?",
     "If you had to describe the grandmother's role in two words, what would they be?",
   ],
   // w3 — an image that stayed with you
   w3: [
-    "What is the writer asking the reader to picture there — what's the feeling?",
-    "Does that image connect to anything else in the passage you noticed?",
+    "Why those two images — what does each one make you feel?",
+    "Does that contrast connect to anything else in the passage you noticed?",
     "If the writer had used a totally different image in that spot, what would you lose?",
     "Why this image and not another — what does it do that the rest of the writing doesn't?",
   ],
   // w4 — would you have climbed it?
   w4: [
-    "What's the strongest reason against climbing it, in your own words?",
+    "What in the passage made you feel that way at first — which specific details?",
     "What would have had to be true for you to actually go up?",
     "Mira had something specific that helped her — what was it, and would that be enough for you?",
     "If your answer is the same as Mira's, why? If it's different, what's the difference about?",
@@ -246,42 +250,127 @@ export function generateScaffolding(
 }
 
 /**
- * Pre-canned "polished" drafts per worksheet question.
+ * Per-question polish plan.
  *
- * These are the structural-edit version of the tidy step: built from
- * the same vocabulary the student used in the brain-dump and the
- * follow-up answers, but reorganised into a complete, coherent
- * response to the worksheet question. Connective tissue is the only
- * material we add — and only enough to make the student's ideas read
- * as a paragraph rather than a list of fragments.
+ * A polished draft is assembled from:
+ *  1. `opening` — a short frame drawn from the student's brain-dump
+ *     vocabulary;
+ *  2. one `perFollowup` contribution per follow-up the student
+ *     actually answered (skipped follow-ups contribute nothing);
+ *  3. an optional `closing` sentence that wraps the paragraph if
+ *     present.
  *
- * In production these would come from a model with the student's
- * actual transcripts as input; for the demo, they're paired with the
- * canned brain-dump and sample answers so the panel sees the
- * before / after relationship clearly.
+ * Every clause in every contribution has been audited against the
+ * sample brain-dump (in `SAMPLE_BRAIN_DUMPS`, on the brain-dump
+ * page) and the sample follow-up answers (in `SAMPLE_ANSWERS`, on
+ * the scaffolding page). If you change the wording of one, change
+ * the matching student-voice source too — otherwise the polished
+ * draft will start asserting things the student never said, which is
+ * exactly the failure mode this product is designed against.
  */
-const TIDIED_BY_QUESTION: Record<string, string> = {
-  w1: "At the start, Mira is scared of the lighthouse. She calls it creepy and she doesn't want to go near it. The turning point is when her grandma tells her the story about her great-grandfather climbing it on storm nights to keep the boats safe. Right after that, the passage says she doesn't hurry quite so much. By the end, she's at the top of it watching the sunset, and she calls it hers. The real shift is about belonging — at the start the lighthouse doesn't belong to the village, but by the end it's hers.",
-  w2: "Mira's grandmother doesn't change the lighthouse itself — she changes how Mira sees it. The grandmother tells Mira about her great-grandfather climbing the lighthouse on storm nights to keep the boats safe. Before the story, Mira just thought the lighthouse was creepy. After it, the passage says she doesn't hurry past it quite so much, and the white stone starts to look less like a bone and more like a candle. In two words, her grandmother is a storyteller and a bridge — she connects Mira's family history to the place Mira sees every day.",
-  w3: "The image that stayed with me is the moment the lighthouse is first called a bone, and then later a candle. They're the same shape — long and white — but they feel completely opposite. A bone feels like something dead; a candle feels warm and alive. I think the writer wants the reader to feel that contrast directly. It also connects to Mira's own shift in the story: the lighthouse going from bone to candle is the same move as Mira going from scared to attached. The image does the whole story in one move, which is why it stayed with me.",
-  w4: "At the start of the story, I don't think I would have climbed the lighthouse. Everything about it says do not enter — the door is always shut, the windows look dark. The strongest reason against going up is just how clearly the building itself signals that it's closed. For me to actually climb it, I would have needed what Mira had: a story about my own family. She had the story about her great-grandfather climbing it on storm nights, and that's what made it feel safe. Without that, I'd probably stay scared of it, the same way she was at the start.",
+type PolishPlan = {
+  opening: string;
+  perFollowup: Record<string, string>;
+  closing?: string;
+};
+
+const POLISH_PLANS: Record<string, PolishPlan> = {
+  // w1 — how Mira's attitude toward the lighthouse changes
+  w1: {
+    opening:
+      "At the start, Mira is scared of the lighthouse. She calls it creepy and she doesn't want to go near it.",
+    perFollowup: {
+      "s-w1-0":
+        "She even said it didn't belong to the village. The turning point is her grandma's story about her great-grandfather climbing the lighthouse on storm nights to keep the boats safe.",
+      "s-w1-1":
+        "The story landed because it made the lighthouse about her own family — it stopped being some random scary thing and became part of who she was.",
+      "s-w1-2":
+        "The line in the passage right after the story is the hinge: it says she doesn't hurry quite so much after it.",
+      "s-w1-3":
+        "A better word for the shift than 'scared' or 'liked' would be 'belonging' — at the start she's outside of it, and by the end she's part of it.",
+    },
+    closing:
+      "By the end, she's at the top of it watching the sunset, and she calls it hers.",
+  },
+
+  // w2 — the grandmother's role
+  w2: {
+    opening:
+      "Mira's grandmother changes things for Mira. Before her grandma's story, Mira just thought the lighthouse was creepy. After the story, she's different about it.",
+    perFollowup: {
+      "s-w2-0":
+        "The story the grandmother tells is about Mira's great-grandfather: the lighthouse used to be his, and he climbed it on storm nights to keep the boats safe.",
+      "s-w2-1":
+        "What actually changes is how Mira sees the lighthouse, not the lighthouse itself. The building doesn't change, but what it means to her does.",
+      "s-w2-2":
+        "A family story makes the lighthouse personal. If a stranger had told Mira the same story it probably wouldn't have done that — it mattered because it was her own family.",
+      "s-w2-3":
+        "In two words, her grandmother is a storyteller and a bridge — she bridges the family history with what Mira sees every day.",
+    },
+  },
+
+  // w3 — an image that stayed with you
+  w3: {
+    opening:
+      "The image that stayed with me is the moment the writer calls the lighthouse a bone, and then later a candle. They're the same shape but a totally different feeling.",
+    perFollowup: {
+      "s-w3-0":
+        "Bone feels dead — like something old and dry, with nothing alive about it. Candle feels warm and alive, like there's a flame at the top.",
+      "s-w3-1":
+        "That contrast connects to the change in Mira: the lighthouse going from bone to candle is basically the same as her going from scared to attached. The image is doing the story in one move.",
+      "s-w3-2":
+        "If the writer had used a totally different image — just called the lighthouse pretty or tall — you'd lose the contrast.",
+      "s-w3-3":
+        "The bone-to-candle move does the whole story in one image. That's why it stayed with me — it's the passage in miniature.",
+    },
+  },
+
+  // w4 — would you have climbed it?
+  w4: {
+    opening:
+      "At the start of the story, I don't think I would have climbed the lighthouse. It looks creepy and the door is always closed.",
+    perFollowup: {
+      "s-w4-0":
+        "Everything about the lighthouse in the first part of the passage says do not enter — the door is always shut, the windows look dark, and it even gets called creepy.",
+      "s-w4-1":
+        "For me to actually have gone up, I'd have needed someone to have done it before me — a parent or a grandparent. Otherwise it would feel like walking alone into a dark scary place.",
+      "s-w4-2":
+        "Mira had something specific that helped her: her grandma's story about her great-grandfather climbing the lighthouse on storm nights. I think that would actually be enough for me too, if it was my own family.",
+      "s-w4-3":
+        "Without that family connection, I'd probably stay scared of it, same as Mira was at the start.",
+    },
+  },
 };
 
 /**
- * Produce the polished draft for the current attempt. Prefers a canned
- * structured draft keyed to the worksheet question; falls back to the
- * deterministic punctuation-only assembleDraft when the question or
- * its canned draft isn't available.
+ * Assemble the polished draft for the current attempt.
+ *
+ * Composition rule: take the question's opening frame; then, for
+ * each follow-up the student actually answered (i.e. not skipped and
+ * non-empty), append that follow-up's per-question contribution; end
+ * with the closing if there is one.
+ *
+ * Skipped follow-ups contribute nothing. That keeps the polished
+ * draft consistent with the provenance trail: if the student didn't
+ * say it, it doesn't appear here.
  */
 export function polishDraft(
   questionId: string | null,
   _brainDump: string,
   answers: ScaffoldingAnswer[],
 ): string {
-  if (questionId && TIDIED_BY_QUESTION[questionId]) {
-    return TIDIED_BY_QUESTION[questionId];
+  const plan = questionId ? POLISH_PLANS[questionId] : null;
+  if (!plan) return assembleDraft(answers);
+
+  const parts: string[] = [plan.opening];
+  for (const a of answers) {
+    if (a.skipped) continue;
+    if (!a.answer.trim()) continue;
+    const contribution = plan.perFollowup[a.questionId];
+    if (contribution) parts.push(contribution);
   }
-  return assembleDraft(answers);
+  if (plan.closing) parts.push(plan.closing);
+  return parts.join(" ");
 }
 
 /**

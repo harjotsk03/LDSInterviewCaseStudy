@@ -30,9 +30,21 @@ import {
  */
 
 // Sample answers keyed by deterministic scaffolding id.
+//
+// The first follow-up for every question is now an EVIDENCE-RETRIEVAL
+// prompt — the student looks at the passage and pulls out the
+// specific detail themselves. This means the textual evidence that
+// later appears in the polished draft enters the system through the
+// student's own answer, not through silent insertion by the AI.
+//
+// If you edit any of these strings, also check POLISH_PLANS in
+// `lib/demo-store.tsx` — the polished output is composed of
+// per-follow-up contributions and assumes the corresponding student
+// vocabulary lives here.
 const SAMPLE_ANSWERS: Record<string, string> = {
+  // w1 — Mira's attitude change
   "s-w1-0":
-    "The line where she calls it hers at the end. That word does so much work because earlier she said it didn't even belong to the village.",
+    "The bit where her grandma tells her about her great-grandfather climbing the lighthouse on storm nights to keep the boats safe. And the line at the end where she calls it hers — earlier she said it didn't even belong to the village, so that word does a lot.",
   "s-w1-1":
     "I think it landed because it made the lighthouse about her own family. It stopped being some random scary thing and became part of who she was.",
   "s-w1-2":
@@ -40,17 +52,19 @@ const SAMPLE_ANSWERS: Record<string, string> = {
   "s-w1-3":
     "Maybe belonging. At the start she's outside of it, by the end she's part of it.",
 
+  // w2 — grandmother's role
   "s-w2-0":
-    "How she sees it, definitely. The lighthouse doesn't change at all, but what it means to her does. That's actually the whole point of the passage I think.",
+    "It's the story about Mira's great-grandfather. The lighthouse used to be his, and he climbed it on storm nights to keep the boats safe.",
   "s-w2-1":
-    "Because a family story makes a thing personal. Like if a stranger told her the same story it probably wouldn't have done that. It mattered because it was her family.",
+    "How she sees it, definitely. The lighthouse doesn't change at all, but what it means to her does. That's actually the whole point of the passage I think.",
   "s-w2-2":
-    "It's the line where she stops hurrying past it. The grandma tells the story and then there's that sentence about the white stone looking less like a bone and more like a candle.",
+    "Because a family story makes a thing personal. Like if a stranger told her the same story it probably wouldn't have done that. It mattered because it was her family.",
   "s-w2-3":
     "Storyteller and bridge. She bridged the family history with what Mira saw every day.",
 
+  // w3 — image that stayed with you
   "s-w3-0":
-    "I think the writer wants you to feel the difference between something dead and something alive. Bone and candle are the same shape but they feel completely opposite.",
+    "Bone feels dead — like something old and dry, with nothing alive about it. Candle feels warm and alive, like there's a flame at the top. Same shape but totally opposite feeling.",
   "s-w3-1":
     "Yeah it connects to the change in Mira. The lighthouse going from bone to candle is basically the same thing as her going from scared to attached. The image is doing the story in one move.",
   "s-w3-2":
@@ -58,14 +72,15 @@ const SAMPLE_ANSWERS: Record<string, string> = {
   "s-w3-3":
     "It does the whole story in one image. That's why it stayed with me — it's the passage in miniature.",
 
+  // w4 — would you have climbed it
   "s-w4-0":
-    "The strongest reason against is that everything in the passage says do not enter. The door is always shut. The windows look dark. That's a pretty clear signal.",
+    "Everything about the lighthouse in the first part says do not enter. The door is always shut. The windows look dark. It even gets called creepy.",
   "s-w4-1":
     "I'd have needed someone to have done it before me — like a parent or a grandparent. Then it wouldn't feel like just me walking alone into a dark scary place.",
   "s-w4-2":
-    "She had the story about her great-grandfather. I think that would actually be enough for me too, if it was my own family.",
+    "She had her grandma's story about her great-grandfather climbing it on storm nights. I think that would actually be enough for me too, if it was my own family.",
   "s-w4-3":
-    "It would be different because Mira's reason for going up is the family connection. Without that I'd probably stay scared of it, same as she was at the start.",
+    "Mira's reason for going up is the family connection. Without that I'd probably stay scared of it, same as she was at the start.",
 };
 
 export default function StudentScaffoldingPage() {

@@ -30,9 +30,11 @@ import { cn } from "@/lib/utils";
  * Review screen — the key screen.
  *
  * Visual hierarchy:
- *   1. Hero card with the polished answer (primary focus, generous
- *      type, comfortable line height).
- *   2. Tab to flip to "My words" — the student's actual transcript.
+ *   1. Hero card. Default tab is "My words" — the student's actual
+ *      transcript — so the honest baseline is what loads first.
+ *   2. "Polished" tab to see the structured paragraph. The polished
+ *      paragraph is composed from per-follow-up contributions, so
+ *      anything the student skipped does NOT appear in polished.
  *   3. Drawer below for the full thinking trail (brain-dump + each
  *      follow-up Q&A pair). Closed by default to keep the page calm.
  *
@@ -45,7 +47,10 @@ export default function StudentReviewPage() {
   const router = useRouter();
   const { state, update, hydrated } = useDemo();
   const selected = useSelectedWorksheetQuestion();
-  const [view, setView] = useState<View>("polished");
+  // Default to "raw" so a reviewer's first impression of this screen
+  // is the student's actual words. The polished tab is a click away;
+  // it's deliberately not the front door.
+  const [view, setView] = useState<View>("raw");
   const [draft, setDraft] = useState(state.tidiedDraft);
   const [editing, setEditing] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -119,9 +124,10 @@ export default function StudentReviewPage() {
           <h1 className="text-student-xl font-bold text-ink leading-[1.2]">
             Your words, organised into a clear answer.
           </h1>
-          <p className="mt-3 text-body text-ink-soft reading-leading max-w-[54ch]">
-            Built from your first thoughts and your follow-up answers. Nothing
-            new was added — you can change anything before submitting.
+          <p className="mt-3 text-body text-ink-soft reading-leading max-w-[58ch]">
+            Built only from your first thoughts and your follow-up answers.
+            No new ideas, no new evidence — and any follow-up you skipped is
+            left out. You can change anything before submitting.
           </p>
         </PageAnim.Item>
 
@@ -203,8 +209,8 @@ export default function StudentReviewPage() {
 
               <p className="mt-5 text-body-sm text-ink-mute reading-leading max-w-[60ch]">
                 {view === "polished"
-                  ? "Your vocabulary is preserved — the polish is structure and flow only."
-                  : "Exactly what you said, untouched."}
+                  ? "Every detail here traces back to something you said in your first thoughts or a follow-up. Structure and connective wording only — never new content."
+                  : "Exactly what you said, untouched — your first thoughts followed by each follow-up answer."}
               </p>
             </div>
           </section>
