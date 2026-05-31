@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /*
+   * Atkinson Hyperlegible — designed by the Braille Institute for readers
+   * with low vision. Strong character differentiation helps dyslexic readers too.
+   * We load it via <link> in the root layout for resilience.
+   */
+  :root {
+    color-scheme: light;
+    --canvas: #faf8f5;
+    --canvas-deep: #f2eee7;
+    --ink: #1f2937;
+  }
+
+  html,
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: "Atkinson Hyperlegible", ui-sans-serif, system-ui,
+      -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+  }
+
+  /* Visible focus rings — never suppressed. */
+  :focus-visible {
+    outline: 2px solid #5e89a8;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* No italics for emphasis. Use weight instead. */
+  em,
+  i {
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  ::selection {
+    background-color: #e2ebde;
+    color: #1f2937;
+  }
+}
+
+@layer components {
+  /* Inline icons inside buttons should never collapse to 0px in a
+     narrow flex row. */
+  button svg {
+    flex-shrink: 0;
+  }
+
+  .text-body {
+    @apply text-[18px] leading-[1.6] tracking-comfy text-ink;
+  }
+  .text-body-sm {
+    @apply text-[16px] leading-[1.6] tracking-comfy text-ink;
+  }
+  .text-lede {
+    @apply text-[22px] leading-[1.55] tracking-comfy text-ink;
+  }
+  .text-hero {
+    @apply text-[34px] leading-[1.4] tracking-[0.005em] text-ink font-semibold;
+  }
+  .text-eyebrow {
+    @apply text-[12px] uppercase leading-[1.4] tracking-[0.08em] text-ink-mute font-bold;
+  }
+
+  /* Reading-comfort line length cap for long-form text. The
+     British Dyslexia Association recommends <72 chars per line; we
+     hold our hero text at 60-66ch and supporting copy a bit wider. */
+  .measure {
+    max-width: 60ch;
+  }
+  .measure-wide {
+    max-width: 68ch;
+  }
+
+  /* Reading-comfort line height. Comfortably above 1.5 (BDA min). */
+  .reading-leading {
+    line-height: 1.75;
+  }
+}
+
+@layer utilities {
+  .grain {
+    background-image: radial-gradient(
+        rgba(31, 41, 55, 0.025) 1px,
+        transparent 1px
+      ),
+      radial-gradient(rgba(31, 41, 55, 0.02) 1px, transparent 1px);
+    background-size: 22px 22px, 33px 33px;
+    background-position: 0 0, 11px 11px;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
